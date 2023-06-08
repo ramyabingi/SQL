@@ -1,0 +1,1029 @@
+create database ProductsInformationRahul
+use ProductsInformationRahul
+
+create table ProductsRahul
+(Id int primary key identity(1,1),
+CategoryId int foreign key references CategoryRahul(CId),
+ProductName varchar(50) unique not null,
+ProductDescription varchar(max) not null,
+MRP decimal not null)
+
+
+Insert into ProductsRahul values
+(1,'Acer','15.6 inch Full HD, Acer ComfyView LED-backlit TFT LCD with IPS Technology',50000),
+(1,'Dell','Dell Technologies Inc (Dell) is a provider of desktop personal computers, software, and peripherals.',50000)
+
+create table CategoryRahul
+(CId int primary key identity(1,1),
+Category varchar(50))
+
+
+Insert into CategoryRahul values
+('Laptops'),
+('Fridges'),
+('Desktops')
+
+
+select * from ProductsRahul
+select * from CategoryRahul
+
+
+create procedure GetProductsRahul
+as
+begin
+select Id,Category,ProductName,ProductDescription,MRP from ProductsRahul
+inner join CategoryRahul
+on ProductsRahul.CategoryId=CategoryRahul.CId
+end
+
+
+create procedure GetProductByIdRahul @id int
+as
+begin
+select * from ProductRahul where Id=@id                      
+end
+
+
+
+
+create procedure InsertProductssRahul @CategoryId int, @ProductName varchar(50), @ProductDescription varchar(max), @MRP decimal
+as
+begin
+insert into ProductsRahul values (@CategoryId,@ProductName,@ProductDescription,@MRP)
+end
+
+
+
+create procedure UpdateProductsRahul @id int,@CategoryId int, @ProductName varchar(50), @ProductDescription varchar(max), @MRP decimal
+as
+begin
+update ProductsRahul set CategoryId=@CategoryId, ProductName=@ProductName, ProductDescription=@ProductDescription , MRP=@MRP where Id=@id
+end
+
+
+
+create procedure DeleteProductsbyRahul  @id int
+as
+begin
+delete from ProductsRahul where Id=@id
+end
+
+
+create procedure GetCategoryRahul
+as
+begin
+select * from CategoryRahul
+end
+
+
+create procedure GetCategorybyIdRahul @Cid int
+as
+begin
+select * from CategoryRahul where CId=@Cid
+end
+
+
+create procedure InsertCategoryRahul @Category varchar(50)
+as
+begin
+insert into CategoryRahul values (@Category)
+end
+
+
+create procedure UpdateCategoryRahul @Cid int,@Category varchar(50)
+as
+begin
+update CategoryRahul set Category=@Category where CId=@Cid
+end
+
+
+create procedure DeleteCategorybyRahul  @Cid int
+as
+begin
+delete from CategoryRahul where CId=@Cid
+end
+
+
+
+
+//////////////////////////////Product Repository///////////////////////
+
+
+using ProductInformationAPIRahul.IRepositoryRahul;
+using ProductInformationAPIRahul.Models;
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+
+namespace ProductInformationAPIRahul.RepositoryRahul
+{
+    public class ProductRepoRahul : IProductRepoRahul
+    {
+        IConfiguration _configuration;
+
+        public ProductRepoRahul(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+
+        //This Method is used for Delete the Product with a perticular Id
+        public bool DeleteProductRahul(int id)
+        {
+            try
+            {
+                SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("connection"));
+                SqlCommand sqlCommand = new SqlCommand("DeleteProductsbyRahul", sqlConnection);
+                sqlCommand.Parameters.AddWithValue("@id", id);
+                sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                sqlCommand.ExecuteNonQuery();
+                sqlConnection.Close();
+                return true;
+            }
+
+            catch (Exception ex)
+            {
+                return false;
+            }
+
+        }
+
+        //This Method is used for Get the Product by Id base
+        public ProductRahul GetProductByIdRahul(int id)
+        {
+
+            try
+            {
+                ProductRahul product = new ProductRahul();
+                SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("connection"));
+                SqlCommand sqlCommand = new SqlCommand("GetProductSByIdRahul", sqlConnection);
+                sqlCommand.Parameters.AddWithValue("@id", id);
+                sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                SqlDataReader sqlDataReader = sqlCommand.ExecuteReader();
+                while (sqlDataReader.Read())
+                {
+                    product.Id = Convert.ToInt32(sqlDataReader["Id"]);
+                    product.CategoryId = Convert.ToInt32(sqlDataReader["CategoryId"]);
+                    product.ProductName = Convert.ToString(sqlDataReader["ProductName"]);
+                    product.ProductDescription = Convert.ToString(sqlDataReader["ProductDescription"]);
+                    product.MRP = Convert.ToInt32(sqlDataReader["MRP"]);
+
+                }
+                sqlDataReader.Close();
+                sqlConnection.Close();
+                return product;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+            
+        }     
+
+
+        //This Method is used for Get the Product list. 
+        public List<ProductDetailsRahul> GetProductDetailsRahul()
+        {
+
+            try
+            {
+                List<ProductDetailsRahul> products = new List<ProductDetailsRahul>();
+                SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("connection"));
+                SqlCommand sqlCommand = new SqlCommand("GetProductsRahul", sqlConnection);
+                sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                SqlDataReader sqlDataReader = sqlCommand.ExecuteReader();
+                while (sqlDataReader.Read())
+                {
+
+                    ProductDetailsRahul productDetailsRahul = new ProductDetailsRahul();
+
+                    productDetailsRahul.Id = Convert.ToInt32(sqlDataReader["Id"]);
+                    productDetailsRahul.Category = Convert.ToString(sqlDataReader["Category"]);
+                    productDetailsRahul.ProductName = Convert.ToString(sqlDataReader["ProductName"]);
+                    productDetailsRahul.ProductDescription = Convert.ToString(sqlDataReader["ProductDescription"]);
+                    productDetailsRahul.MRP = Convert.ToDouble(sqlDataReader["MRP"]);
+
+                    products.Add(productDetailsRahul);
+                }
+                sqlDataReader.Close();
+                sqlConnection.Close();
+                return products;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+            
+        }
+
+        //This Method is used for Insert the Product.
+        public bool InsertProductRahul(ProductRahul productRahul)
+        {
+
+            try
+            {
+                SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("connection"));
+                SqlCommand sqlCommand = new SqlCommand("InsertProductssRahul", sqlConnection);
+                sqlCommand.Parameters.AddWithValue("@CategoryId", productRahul.CategoryId);
+                sqlCommand.Parameters.AddWithValue("@ProductName", productRahul.ProductName);
+                sqlCommand.Parameters.AddWithValue("@ProductDescription", productRahul.ProductDescription);
+                sqlCommand.Parameters.AddWithValue("@MRP", productRahul.MRP);
+
+                sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                sqlCommand.ExecuteNonQuery();
+                sqlConnection.Close();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+            
+        }
+
+
+        //This Method is used for Update the Product.
+        public bool UpdateProductRahul(ProductRahul productRahul)
+        {
+
+            try
+            {
+                SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("connection"));
+                SqlCommand sqlCommand = new SqlCommand("UpdateProductsRahul", sqlConnection);
+                sqlCommand.Parameters.AddWithValue("@Id", productRahul.Id);
+                sqlCommand.Parameters.AddWithValue("@CategoryId", productRahul.CategoryId);
+                sqlCommand.Parameters.AddWithValue("@ProductName", productRahul.ProductName);
+                sqlCommand.Parameters.AddWithValue("@ProductDescription", productRahul.ProductDescription);
+                sqlCommand.Parameters.AddWithValue("@MRP", productRahul.MRP);
+
+                sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                sqlCommand.ExecuteNonQuery();
+                sqlConnection.Close();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+            
+        }
+    }
+}
+
+
+
+////////////////////////////// Category Repository///////////////////////
+
+using ProductInformationAPIRahul.IRepositoryRahul;
+using ProductInformationAPIRahul.Models;
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+
+namespace ProductInformationAPIRahul.RepositoryRahul
+{
+    public class CategoryRepoRahul : ICategoryRepoRahul
+    {
+        IConfiguration _configuration;
+
+        public CategoryRepoRahul(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        //This Method is used for Delete the Category with a perticular record
+        public bool DeleteCategoryRahul(int Cid)
+        {
+
+            try
+            {
+                SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("connection"));
+                SqlCommand sqlCommand = new SqlCommand("DeleteCategorybyRahul", sqlConnection);
+                sqlCommand.Parameters.AddWithValue("@Cid", Cid);
+                sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                sqlCommand.ExecuteNonQuery();
+                sqlConnection.Close();
+                return true;
+            }
+            catch(Exception ex)
+            {
+                return false;
+            }
+        }
+
+
+        //This Method is used for Get the Category by Id base
+
+        public CategoryRahul GetCategoryByIdRahul(int Cid)
+        {
+
+
+            try
+            {
+                CategoryRahul product = new CategoryRahul();
+                SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("connection"));
+                SqlCommand sqlCommand = new SqlCommand("GetCategorybyIdRahul", sqlConnection);
+                sqlCommand.Parameters.AddWithValue("@Cid", Cid);
+                sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                SqlDataReader sqlDataReader = sqlCommand.ExecuteReader();
+                while (sqlDataReader.Read())
+                {
+                    product.CId = Convert.ToInt32(sqlDataReader["CId"]);
+                    product.Category = Convert.ToString(sqlDataReader["Category"]);
+
+                }
+                sqlDataReader.Close();
+                sqlConnection.Close();
+                return product;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+            
+        }
+
+        //This Method is used for Get the Category list. 
+        public List<CategoryRahul> GetCategoryRahul()
+        {
+
+
+            try
+            {
+                List<CategoryRahul> products = new List<CategoryRahul>();
+                SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("connection"));
+                SqlCommand sqlCommand = new SqlCommand("GetCategoryRahul", sqlConnection);
+                sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                SqlDataReader sqlDataReader = sqlCommand.ExecuteReader();
+                while (sqlDataReader.Read())
+                {
+
+                    CategoryRahul productDetailsRahul = new CategoryRahul();
+
+                    productDetailsRahul.CId = Convert.ToInt32(sqlDataReader["CId"]);
+                    productDetailsRahul.Category = Convert.ToString(sqlDataReader["Category"]);
+
+
+                    products.Add(productDetailsRahul);
+                }
+                sqlDataReader.Close();
+                sqlConnection.Close();
+                return products;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+           
+        }
+
+
+        //This Method is used for Insert the Category.
+        public bool InsertCategoryRahul(CategoryRahul categoryRahul)
+        {
+
+            try
+            {
+                SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("connection"));
+                SqlCommand sqlCommand = new SqlCommand("InsertCategoryRahul", sqlConnection);
+                sqlCommand.Parameters.AddWithValue("@Category", categoryRahul.Category);
+
+                sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                sqlCommand.ExecuteNonQuery();
+                sqlConnection.Close();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+            
+        }
+
+        //This Method is used for Update the Category.
+
+        public bool UpdateCategoryRahul(CategoryRahul categoryRahul)
+        {
+
+            try
+            {
+                SqlConnection sqlConnection = new SqlConnection(_configuration.GetConnectionString("connection"));
+                SqlCommand sqlCommand = new SqlCommand("UpdateCategoryRahul", sqlConnection);
+                sqlCommand.Parameters.AddWithValue("@CId", categoryRahul.CId);
+                sqlCommand.Parameters.AddWithValue("@Category", categoryRahul.Category);
+
+
+                sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                sqlCommand.ExecuteNonQuery();
+                sqlConnection.Close();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+            
+        }
+
+        
+    }
+}
+
+
+
+////////////////////////////// Angular ///////////////////////
+
+
+////////////////////////////// Product Component ///////////////////////
+
+import { Component,OnInit } from '@angular/core';
+import { ProductRahulService } from 'src/app/Services/product-rahul.service';
+import { CategoryRahulService } from 'src/app/Services/category-rahul.service';
+
+export class ProductDetailsRahul{
+  Id !: number;
+  Category !: string;
+  ProductName !: string;
+  ProductDescription !: string;
+  MRP !: number;
+}
+
+export class ProductRahul{
+  Id !: number;
+  CategoryId : number=-1;
+  ProductName !: string;
+  ProductDescription !: string;
+  MRP !: number;
+}
+
+export class CategoryRahul{
+  CId !: number;
+  Category !: string;
+  
+}
+
+@Component({
+  selector: 'app-product-rahul',
+  templateUrl: './product-rahul.component.html',
+  styleUrls: ['./product-rahul.component.css']
+})
+export class ProductRahulComponent implements OnInit{
+
+  product: ProductRahul = new ProductRahul();
+  productdata: ProductRahul[] = []
+  categoryrahul: CategoryRahul[] = []
+
+  producttDetailsdata: ProductDetailsRahul[] = []
+  pdrahul : ProductDetailsRahul = new ProductDetailsRahul();
+  
+  pid !: number
+  isSave: boolean = true;
+  isUpdate: boolean = false;
+
+  constructor(private productservice: ProductRahulService, private category :CategoryRahulService) {
+
+  }
+  ngOnInit(): void {
+    this.GetProductRahul();
+    this.GetCategoryRahul();
+
+  }
+  GetProductRahul(): any {
+    this.productservice.GetProductRahul().subscribe(
+      (resp: any) => {
+        this.producttDetailsdata = resp;
+      }
+    )
+  }
+  GetProductByIdRahul(id: number=this.pid): any {
+    debugger;
+    this.productservice.GetProductByIdRahul(id).subscribe((resp: any) => {
+      this.product=resp;
+      this.isSave = false;
+      this.isUpdate = true;
+    })
+  }
+  DeleteProductRahul(id: number=this.pid): any {
+    alert("Are you sure want to delete then ok to Confirm")
+    this.productservice.DeleteProductRahul(id).subscribe(
+      (resp: any) => {
+        this.product=resp;
+        this.GetProductRahul();
+        alert("data delete sucessfully")
+
+      }
+    )}
+  
+  InsertProductRahul(): any {
+      this.productservice.InsertProductRahul(this.product).subscribe((res:boolean)=>
+      {
+      if(res=true)
+      {
+        alert("data saved");
+      }
+      else{
+        alert("data didn't saved");
+      }
+        
+        this.GetProductRahul();
+      }) 
+      this.cleardata();
+    }
+  
+
+  UpdateProductRahul(): any {
+    this.productservice.UpdateProductRahul(this.product).subscribe(
+      (resp: any) => {
+        this.product=resp;
+        this.isSave = true;
+        this.isUpdate = false;
+        this.GetProductRahul()
+        alert("Data Updated")
+        this.product = new ProductRahul();
+      
+      }
+    )
+    this.cleardata();
+  }
+
+  GetCategoryRahul(): any {
+    this.category.GetCategoryRahul().subscribe(
+      (resp: any) => {
+        this.categoryrahul = resp;
+      }
+    )
+  }
+  cleardata():any{
+    this.product = new ProductRahul();
+    
+
+  }
+}
+
+
+////////////////////////////// Product Service ///////////////////////
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
+export class ProductDetailsRahul{
+  Id !: number;
+  Category !: string;
+  ProductName !: string;
+  ProductDescription !: string;
+  MRP !: number;
+}
+
+export class ProductRahul{
+  Id !: number;
+  CategoryId !: number;
+  ProductName !: string;
+  ProductDescription !: string;
+  MRP !: number;
+}
+
+export class CategoryRahul{
+  CId !: number;
+  Category !: string;
+  
+}
+
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ProductRahulService {
+
+  constructor(private http : HttpClient) { }
+
+  GetProductRahul():any{
+   return this.http.get("https://localhost:44356/api/ProductControllerRahul/GetProductDetailsRahul");
+  }
+
+  GetProductByIdRahul(Id : number):any{
+    return this.http.get("https://localhost:44356/api/ProductControllerRahul/GetProductByIdRahul/"+Id);
+  }
+
+  InsertProductRahul(product : ProductRahul):any{
+    debugger
+    return this.http.post("https://localhost:44356/api/ProductControllerRahul/InsertProductRahul",product);
+  }
+
+  UpdateProductRahul(product : ProductRahul):any{
+    return this.http.put("https://localhost:44356/api/ProductControllerRahul/UpdateProductRahul",product);
+  }
+
+  DeleteProductRahul(Id : number):any{
+    return this.http.delete("https://localhost:44356/api/ProductControllerRahul/DeleteProductRahul/"+Id);
+  }
+}
+
+
+////////////////////////////// Product Html ///////////////////////
+
+<!-- <h1 class="box"> Product Details </h1>
+
+
+<div>
+
+   
+        <table>
+            <label > id </label>
+            <input type="text" id="categoryid" name="categorynm" [(ngModel)]="pid"><br><br>
+
+            <label for=""> Category : </label>
+            <select name="cid" id="cnm" [(ngModel)]="product.CategoryId">
+                <option *ngFor="let item of producttDetailsdata" value="{{item.Id}}">{{item.Category}}</option>
+            </select>
+
+            <label for=""> ProductName : </label>
+            <input type="text" id="categoryid" name="categorynm" [(ngModel)]="product.ProductName"><br><br>
+
+            
+            <label for=""> ProductDescription : </label>
+            <input type="text" id="categoryid" name="categorynm" [(ngModel)]="product.ProductDescription"><br><br>
+
+            <label for=""> MRP : </label>
+            <input type="number" id="categoryid" name="categorynm" [(ngModel)]="product.MRP"><br><br>
+
+        </table>
+
+        <button *ngIf="isSave" (click)="InsertProductRahul()"> save </button>
+
+        <button (click)="GetProductRahul()"> get </button>
+
+        <td><button (click)="GetProductByIdRahul(pid)"> getbyid </button></td>
+
+        <button *ngIf="isUpdate" (click)="UpdateProductRahul()"> update </button>
+
+
+
+   
+</div>
+
+<div>
+    <table border="2">
+        <tr>
+            <th>Category</th>
+            <th>ProductName</th>
+            <th>ProductDescription</th>
+            <th>MRP</th>
+            <th colspan="2">Actions</th>
+
+        </tr>
+
+
+
+        <tr *ngFor="let data of producttDetailsdata">
+            <td>{{data.Category}}</td>
+            <td>{{data.ProductName}}</td>
+            <td>{{data.ProductDescription}}</td>
+            <td>{{data.MRP}}</td>
+
+            <td><button (click)="GetProductByIdRahul(data.Id)"> Edit </button></td>
+            <td><button (click)="DeleteProductRahul(data.Id)"> Delete </button></td>
+
+        </tr>
+    </table>
+</div> -->
+
+
+
+
+
+
+<div class="container-fluid">
+    <!-- <div class="navbar navbar-light bg-primary">
+            <div>
+                <h1 style="color: white;"><p class="text-center"> Product Details </p> </h1>
+        </div>
+    </div> <br><br> -->
+    <h1 style="color: blue;"><p class="text-center"> Product Details </p> </h1>
+
+
+   
+    <div class="row">
+        <div class="col-sm-4"></div>
+        <div class="col-sm-2">
+            <label for="productName" class="col-sm-5 col-form-label">ProductName <span class="rahul" style="font-size: smaller;">*</span> :
+            </label>
+        </div>
+        <div class="col-sm-3">
+            <input type="text" name="pdname" [(ngModel)]="product.ProductName" required
+                id="dname" #productnm="ngModel" ngModel>
+        </div>
+        <div class="col-sm-3">
+            <div *ngIf="(productnm.dirty || productnm.touched)&&productnm.invalid" > 
+                <span class="rahul" style="font-size: smaller;"> *ProductName is Required </span>
+            </div>
+        </div>
+    </div>
+        <div class="row">
+            <div class="col-sm-4"></div>
+                <div class="col-sm-2">
+                    <label for="description" class="col-sm-5 col-form-label">Category <span class="rahul" style="font-size: smaller;">*</span> :
+                    </label>
+                </div>
+            <div class="col-sm-3">
+                <select name="cid" id="cnm" [(ngModel)]="product.CategoryId">
+                    <option value="-1" #cat="ngModel" ngModel>--Select--</option>
+                    <option *ngFor="let item of categoryrahul" value="{{item.CId}}" >{{item.Category}}</option>
+                </select>
+                <div class="col-sm-3">
+                    <div *ngIf="(cat.dirty || cat.touched)&&cat.invalid" > 
+                        <span class="rahul" style="font-size: smaller;"> *Category is Required </span>
+                    </div>
+                </div>
+            </div>         
+        </div>
+
+
+
+
+        <div class="row">
+            <div class="col-sm-4"></div>
+            <div class="col-sm-2">
+                <label for="description" class="col-sm-5 col-form-label"> ProductDescription: 
+                </label>
+            </div>
+            <div class="col-sm-3">
+                <input type="text" name="pdesname" [(ngModel)]="product.ProductDescription" required 
+                    id="dname">
+            </div>
+        </div>
+
+
+        <div class="row">
+            <div class="col-sm-4"></div>
+            <div class="col-sm-2">
+                <label for="description" class="col-sm-5 col-form-label"> MRP <span class="rahul" style="font-size: smaller;">*</span> :
+                </label>
+            </div>
+            <div class="col-sm-3">
+                <input type="number" name="mrpname" [(ngModel)]="product.MRP" required 
+                    id="dname" min="1"  #MRP="ngModel" ngModel>
+            </div>
+            <div class="col-sm-3">
+                <div *ngIf="(MRP.dirty || MRP.touched)&&MRP.invalid" > 
+                    <span class="rahul" style="font-size: smaller;"> *MRP is Required </span> <br>
+                    <span class="rahul" style="font-size: smaller;" *ngIf="product.MRP<0" >*Please Enter Valid Number </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-4"></div>
+            <div class="col-sm-2"></div>
+            <div class="col-sm-4">
+                <button type="submit" class="btn btn-primary mt-n1" *ngIf="isSave" (click)="InsertProductRahul()"
+                    >Save</button>
+                <button type="button" class="btn btn-success" *ngIf="isUpdate"
+                    (click)="UpdateProductRahul()">Update</button>
+            </div>
+        </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Category</th>
+                <th>ProductName</th>
+                <th>ProductDescription</th>
+                <th>MRP</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+            <tr *ngFor="let data of producttDetailsdata">
+                <td>{{data.Id}}</td>
+                <td>{{data.Category}}</td>
+                <td>{{data.ProductName}}</td>
+                <td>{{data.ProductDescription}}</td>
+                <td>{{data.MRP}}</td>
+
+                <td>
+                    <button type="button"  class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal"
+                        (click)="GetProductByIdRahul(data.Id)">Edit</button>
+
+                    <button type="button" class="button" class="btn btn-danger" (click)="DeleteProductRahul(data.Id)">Delete</button>
+                </td>
+            </tr>
+    </table>
+</div>
+
+
+
+////////////////////////////// Category Component ///////////////////////
+
+import { Component } from '@angular/core';
+import { CategoryRahulService } from 'src/app/Services/category-rahul.service';
+
+export class CategoryRahul{
+  CId!: number;
+  Category!: string;
+  
+}
+@Component({
+  selector: 'app-category-rahul',
+  templateUrl: './category-rahul.component.html',
+  styleUrls: ['./category-rahul.component.css']
+})
+export class CategoryRahulComponent {
+  category: CategoryRahul = new CategoryRahul();
+  categorydata: CategoryRahul[] = []
+  cid: number = 0
+  isSave: boolean = true;
+  isUpdate: boolean = false;
+
+  constructor(private categoryservice: CategoryRahulService) {
+
+  }
+  ngOnInit(): void {
+    this.GetCategoryRahul();
+  }
+  GetCategoryRahul(): any { debugger
+    
+    this.categoryservice.GetCategoryRahul().subscribe(
+      (resp: any) => {
+        this.categorydata = resp;
+      }
+    )
+  }
+  GetCategoryByIdRahul(id: number=this.cid): any {debugger
+    this.categoryservice.GetCategoryByIdRahul(id).subscribe((resp: any) => {
+      this.category = resp;
+      this.isSave = false;
+      this.isUpdate = true;
+
+    })
+  }
+  DeleteCategoryRahul(id: number=this.cid): any {debugger
+    this.categoryservice.DeleteCategoryRahul(id).subscribe(
+      (resp: any) => {
+        this.GetCategoryRahul()
+        alert("data deleted sucessfully")
+      }
+    )
+  }
+  
+  InsertCategoryRahul(): any {debugger
+    debugger;
+      this.categoryservice.InsertCategoryRahul(this.category).subscribe(
+        (resp: boolean) => {
+         if(resp=true)
+          {
+          alert("Data Saved sucessfully")
+          this.GetCategoryRahul()
+          this.category = new CategoryRahul();
+        }
+        else 
+        {
+          alert("Data not Saved sucessfully")
+        }
+        }
+      )
+    }
+  
+
+  UpdateCategoryRahul(): any {debugger
+    this.categoryservice.UpdateCategoryRahul(this.category).subscribe(
+      (resp: boolean) => {
+        if(resp=true)
+          {
+          alert("Data Updated sucessfully")
+          this.GetCategoryRahul()
+          this.category = new CategoryRahul();
+        }
+        else 
+        {
+          alert("Data not Updated sucessfully")
+        }
+      }
+    )
+  }
+
+  cleardata():any{
+    this.category.CId=0;
+    this.category.Category='';
+  }
+}
+
+
+////////////////////////////// Category Sevices ///////////////////////
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
+export class CategoryRahul{
+  CId !: number;
+  Category !: string;
+  
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class CategoryRahulService {
+
+  constructor(private http : HttpClient) { }
+
+  GetCategoryRahul():any{
+    return this.http.get("https://localhost:44356/api/CategoryControllerRahul/GetCategoryRahul");
+  }
+
+  GetCategoryByIdRahul(Id : number):any{
+    return this.http.get("https://localhost:44356/api/CategoryControllerRahul/GetCategoryByIdRahul/"+Id);
+  }
+
+  InsertCategoryRahul(category : CategoryRahul):any{
+    debugger
+    return this.http.post("https://localhost:44356/api/CategoryControllerRahul/InsertCategoryRahul",category);
+  }
+
+  UpdateCategoryRahul(category : CategoryRahul):any{
+    return this.http.put("https://localhost:44356/api/CategoryControllerRahul/UpdateCategoryRahul",category);
+  }
+
+  DeleteCategoryRahul(Id : number):any{
+    return this.http.delete("https://localhost:44356/api/CategoryControllerRahul/DeleteCategoryRahul/"+Id);
+  }
+}
+
+
+
+
+////////////////////////////// Category Html ///////////////////////
+
+<div class="container-fluid">
+    <h1 style="color: blue;"><p class="text-center"> Category Details </p> </h1>
+
+<div class="row" border="2">
+    <div class="col-sm-4"></div>
+        <div class="col-sm-2">
+            <label for="productName" class="col-sm-5 col-form-label">Category <span class="rahul" style="font-size: smaller;">*</span> :
+            </label>
+        </div>
+    <div class="col-sm-3">
+        <input type="text" name="pdname" [(ngModel)]="category.Category" required
+            id="dname" #cattnm="ngModel" ngModel>
+    </div>
+    <div class="col-sm-3">
+        <div *ngIf="(cattnm.dirty || cattnm.touched)&&cattnm.invalid" > 
+            <span class="rahul" style="font-size: smaller;"> *Category is Required </span>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="row">
+    <div class="col-sm-4"></div>
+    <div class="col-sm-2"></div>
+    <div class="col-sm-4">
+        <button type="submit" class="btn btn-primary mt-n1" *ngIf="isSave" (click)="InsertCategoryRahul()"
+            >Save</button>
+        <button type="button" class="btn btn-success" *ngIf="isUpdate"
+            (click)="UpdateCategoryRahul()">Update</button>
+    </div>
+</div>
+
+
+<div>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Category</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+        <tr *ngFor="let data of categorydata">
+            <td>{{data.CId}}</td>
+            <td>{{data.Category}}</td>
+            
+
+            <td>
+                <button type="button"  class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal"
+                    (click)="GetCategoryByIdRahul(data.CId)">Edit</button>
+
+                <button type="button" class="button" class="btn btn-danger" (click)="DeleteCategoryRahul(data.CId)">Delete</button>
+            </td>
+        </tr>
+</table>
+</div>
